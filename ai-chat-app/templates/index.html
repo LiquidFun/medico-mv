@@ -908,7 +908,7 @@
         <form id="authForm">
             <div class="form-group hidden" id="emailGroup">
                 <label for="email" id="emailLabel">E-Mail</label>
-                <input type="email" id="email" required>
+                <input type="email" id="email">
             </div>
 
             <div class="form-group">
@@ -1248,7 +1248,8 @@
             document.getElementById('aiChatTitle').textContent = t('aiChat');
             document.getElementById('logoutBtn').textContent = t('logout');
             if (state.user) {
-                document.getElementById('userInfo').textContent = `${t('loggedInAs')} ${state.user.username}`;
+                const displayName = state.user.display_name || state.user.username;
+                document.getElementById('userInfo').textContent = `${t('loggedInAs')} ${displayName}`;
             }
 
             // Message input
@@ -1759,10 +1760,13 @@
             state.isAuthMode = state.isAuthMode === 'login' ? 'register' : 'login';
             updateUI();
 
+            const emailInput = document.getElementById('email');
             if (state.isAuthMode === 'login') {
                 emailGroup.classList.add('hidden');
+                emailInput.removeAttribute('required');
             } else {
                 emailGroup.classList.remove('hidden');
+                emailInput.setAttribute('required', '');
             }
         });
 

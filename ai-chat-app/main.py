@@ -29,12 +29,17 @@ async def lifespan(app: FastAPI):
                 admin_user = User(
                     username="admin",
                     email="admin@example.com",
-                    hashed_password=get_password_hash("password")
+                    hashed_password=get_password_hash("password"),
+                    display_name="Ulrike Schlüter"
                 )
                 db.add(admin_user)
                 await db.commit()
                 print("✓ Default admin user created (username: admin, password: password)")
             else:
+                # Update display name if not set
+                if not admin_user.display_name:
+                    admin_user.display_name = "Ulrike Schlüter"
+                    await db.commit()
                 print("✓ Admin user already exists")
         except Exception as e:
             print(f"Error creating admin user: {e}")

@@ -20,6 +20,7 @@ class UserResponse(BaseModel):
     id: int
     username: str
     email: str
+    display_name: str | None = None
 
     class Config:
         from_attributes = True
