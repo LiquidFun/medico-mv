@@ -951,9 +951,10 @@
 
             <div class="mode-selector">
                 <div class="mode-dropdown">
-                    <button class="mode-button" id="modeButton"><span id="dataSourcesText">Datenquellen</span></button>
+                    <button class="mode-button" id="modeButton"><span id="dataSourcesText">Datenbereiche</span>: <span id="selectedModesText">Patientendaten, Medizindaten</span></button>
                     <div class="mode-menu" id="modeMenu">
-                        <div class="mode-option" data-mode="patient" id="modePatient">Patientendaten</div>
+                        <div class="mode-option active" data-mode="patient" id="modePatient">Patientendaten</div>
+                        <div class="mode-option active" data-mode="medical" id="modeMedical">Medizindaten</div>
                         <div class="mode-option" data-mode="admin" id="modeAdmin">Verwaltungsdaten</div>
                         <div class="mode-option" data-mode="research" id="modeResearch">Forschungsdaten</div>
                     </div>
@@ -1104,14 +1105,15 @@
                 haveAccount: 'Bereits ein Konto?',
 
                 // Sidebar
-                chatInterface: 'Chat-Oberfläche',
+                chatInterface: 'medaily.de',
                 newChat: '+ Neuer Chat',
-                dataSources: 'Datenquellen',
+                dataSources: 'Datenbereiche',
                 conversations: 'Konversationen',
                 connectedDatabases: 'Verbundene Datenbanken',
 
                 // Data source modes
                 patientData: 'Patientendaten',
+                medicalData: 'Medizindaten',
                 adminData: 'Verwaltungsdaten',
                 researchData: 'Forschungsdaten',
 
@@ -1158,14 +1160,15 @@
                 haveAccount: 'Already have an account?',
 
                 // Sidebar
-                chatInterface: 'Chat Interface',
+                chatInterface: 'medaily.de',
                 newChat: '+ New Chat',
-                dataSources: 'Data Sources',
+                dataSources: 'Data Areas',
                 conversations: 'Conversations',
                 connectedDatabases: 'Connected Databases',
 
                 // Data source modes
                 patientData: 'Patient Data',
+                medicalData: 'Medical Data',
                 adminData: 'Admin Data',
                 researchData: 'Research Data',
 
@@ -1235,6 +1238,7 @@
             document.getElementById('newChatBtn').textContent = t('newChat');
             document.getElementById('dataSourcesText').textContent = t('dataSources');
             document.getElementById('modePatient').textContent = t('patientData');
+            document.getElementById('modeMedical').textContent = t('medicalData');
             document.getElementById('modeAdmin').textContent = t('adminData');
             document.getElementById('modeResearch').textContent = t('researchData');
             document.getElementById('conversationsTitle').textContent = t('conversations');
@@ -1284,23 +1288,40 @@
         const modeButton = document.getElementById('modeButton');
         const modeMenu = document.getElementById('modeMenu');
         const modeOptions = document.querySelectorAll('.mode-option');
-        let currentMode = null;
+        let selectedModes = new Set(['patient', 'medical']); // Pre-select Patient and Medical
 
         // Language switcher
         document.getElementById('langDe').addEventListener('click', () => {
             state.language = 'de';
             localStorage.setItem('language', 'de');
             updateUI();
+            updateSelectedModesText();
         });
 
         document.getElementById('langEn').addEventListener('click', () => {
             state.language = 'en';
             localStorage.setItem('language', 'en');
             updateUI();
+            updateSelectedModesText();
         });
 
         // Initialize UI with current language
         updateUI();
+
+        // Function to update the selected modes display text
+        function updateSelectedModesText() {
+            const selectedModesText = document.getElementById('selectedModesText');
+            if (selectedModes.size === 0) {
+                selectedModesText.textContent = '-';
+            } else {
+                const modeNames = [];
+                selectedModes.forEach(mode => {
+                    const modeKey = mode + 'Data';
+                    modeNames.push(t(modeKey));
+                });
+                selectedModesText.textContent = modeNames.join(', ');
+            }
+        }
 
         modeButton.addEventListener('click', () => {
             modeMenu.classList.toggle('open');
@@ -1308,19 +1329,28 @@
         });
 
         modeOptions.forEach(option => {
-            option.addEventListener('click', () => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
                 const mode = option.dataset.mode;
-                currentMode = mode;
 
-                // Update active states
-                modeOptions.forEach(o => o.classList.remove('active'));
-                option.classList.add('active');
+                // Toggle selection
+                if (selectedModes.has(mode)) {
+                    selectedModes.delete(mode);
+                    option.classList.remove('active');
+                } else {
+                    selectedModes.add(mode);
+                    option.classList.add('active');
+                }
 
-                // Close menu
-                modeMenu.classList.remove('open');
-                modeButton.classList.remove('open');
+                // Update display text
+                updateSelectedModesText();
+
+                // Don't close menu on selection (multi-select)
             });
         });
+
+        // Initialize the selected modes text
+        updateSelectedModesText();
 
         // Close menu when clicking outside
         document.addEventListener('click', (e) => {
