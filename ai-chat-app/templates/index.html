@@ -46,12 +46,20 @@
             padding: 20px;
             border-bottom: 1px solid #e1e4e8;
             flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-logo {
+            height: 40px;
+            width: auto;
         }
 
         .sidebar-header h2 {
             font-size: 16px;
             color: #24292e;
-            margin-bottom: 15px;
+            margin-bottom: 0;
             font-weight: 600;
         }
 
@@ -240,7 +248,18 @@
             background: white;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-logo {
+            height: 50px;
+            width: auto;
         }
 
         .header-left h1 {
@@ -878,6 +897,7 @@
     <div id="chatScreen" class="container hidden">
         <div class="sidebar">
             <div class="sidebar-header">
+                <img src="/static/logo.png" alt="Logo" class="sidebar-logo">
                 <h2>Chat Interface</h2>
             </div>
 
@@ -933,8 +953,10 @@
         <div class="main-content">
             <div class="chat-header">
                 <div class="header-left">
-                    <h1>AI Chat</h1>
-                    <div class="user-info" id="userInfo"></div>
+                    <div>
+                        <h1>AI Chat</h1>
+                        <div class="user-info" id="userInfo"></div>
+                    </div>
                 </div>
                 <div class="header-right">
                     <img src="https://www.med.uni-rostock.de/typo3conf/ext/w3_base/Resources/Public/Img/logos/logo_unimed.png" alt="Universitätsmedizin Rostock" style="height: 50px; width: auto;">
