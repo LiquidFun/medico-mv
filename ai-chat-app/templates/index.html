@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Chat Application</title>
+    <link rel="icon" type="image/png" href="/static/robot.png">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -941,22 +942,22 @@
                 <button class="new-chat-btn" id="newChatBtn">+ Neuer Chat</button>
             </div>
 
+            <div class="conversations-wrapper">
+                <div style="padding: 15px 10px 0 10px; flex-shrink: 0;">
+                    <h3 class="category-title" id="conversationsTitle">Konversationen</h3>
+                </div>
+                <div class="conversations-list" id="conversationsList"></div>
+            </div>
+
             <div class="mode-selector">
                 <div class="mode-dropdown">
-                    <button class="mode-button" id="modeButton"><span id="dataSourcesText">Datenquellen</span> ▼</button>
+                    <button class="mode-button" id="modeButton"><span id="dataSourcesText">Datenquellen</span></button>
                     <div class="mode-menu" id="modeMenu">
                         <div class="mode-option" data-mode="patient" id="modePatient">Patientendaten</div>
                         <div class="mode-option" data-mode="admin" id="modeAdmin">Verwaltungsdaten</div>
                         <div class="mode-option" data-mode="research" id="modeResearch">Forschungsdaten</div>
                     </div>
                 </div>
-            </div>
-
-            <div class="conversations-wrapper">
-                <div style="padding: 15px 10px 0 10px; flex-shrink: 0;">
-                    <h3 class="category-title" id="conversationsTitle">Konversationen</h3>
-                </div>
-                <div class="conversations-list" id="conversationsList"></div>
             </div>
 
             <div class="database-section">
