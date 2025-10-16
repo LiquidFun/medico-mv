@@ -54,7 +54,8 @@ class RAGClient:
                 "doc_id": chunk.get("doc_id", "unknown"),
                 "filename": chunk.get("metadata", {}).get("filename", "Unknown"),
                 "page": chunk.get("metadata", {}).get("page", 1),
-                "chunk_id": chunk.get("chunk_id", 0)
+                "chunk_id": chunk.get("chunk_id", 0),
+                "text": chunk.get("text", "")  # Include the chunk text
             }
 
         return {"chunks": chunks, "sources": sources}
