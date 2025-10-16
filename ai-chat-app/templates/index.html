@@ -1089,13 +1089,18 @@
 
             try {
                 // Fetch PDF from authenticated endpoint
-                const response = await fetch(`/api/documents/${source.doc_id}/pdf`, {
+                const response = await fetch(`/api/documents/${encodeURIComponent(source.doc_id)}/pdf`, {
                     headers: {
                         'Authorization': `Bearer ${state.token}`
                     }
                 });
 
-                if (!response.ok) throw new Error('Failed to load PDF');
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error('PDF file not found. The document may need to be re-uploaded to enable PDF viewing.');
+                    }
+                    throw new Error('Failed to load PDF');
+                }
 
                 const pdfBlob = await response.blob();
                 const pdfUrl = URL.createObjectURL(pdfBlob);
@@ -1108,7 +1113,7 @@
                 updatePdfControls();
             } catch (error) {
                 console.error('Error loading PDF:', error);
-                alert('Failed to load PDF document');
+                alert(error.message || 'Failed to load PDF document');
                 modal.classList.remove('open');
             }
         }

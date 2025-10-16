@@ -1019,6 +1019,15 @@ wheels = [
 ]
 
 [[package]]
+name = "python-multipart"
+version = "0.0.20"
+source = { registry = "https://nexus.planet-ai.de/repository/pypi-all/simple/" }
+sdist = { url = "https://nexus.planet-ai.de/repository/pypi-all/packages/python-multipart/0.0.20/python_multipart-0.0.20.tar.gz", hash = "sha256:8dd0cab45b8e23064ae09147625994d090fa46f5b0d1e13af944c331a7fa9d13" }
+wheels = [
+    { url = "https://nexus.planet-ai.de/repository/pypi-all/packages/python-multipart/0.0.20/python_multipart-0.0.20-py3-none-any.whl", hash = "sha256:8a62d3a8335e06589fe01f2a3e178cdcc632f3fbe0d492ad9ee0ec35aab1f104" },
+]
+
+[[package]]
 name = "pywin32"
 version = "311"
 source = { registry = "https://nexus.planet-ai.de/repository/pypi-all/simple/" }
@@ -1117,6 +1126,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "click" },
     { name = "python-dotenv" },
+    { name = "python-multipart" },
     { name = "requests" },
 ]
 
@@ -1137,6 +1147,7 @@ requires-dist = [
     { name = "pymupdf", marker = "extra == 'rag'", specifier = ">=1.26.5" },
     { name = "python-docx", marker = "extra == 'rag'", specifier = ">=1.2.0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "qdrant-client", marker = "extra == 'rag'", specifier = ">=1.15.1" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "sentence-transformers", marker = "extra == 'rag'", specifier = ">=5.1.1" },

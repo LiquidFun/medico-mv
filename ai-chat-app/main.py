@@ -56,6 +56,7 @@ app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(ws_router)
 app.include_router(tools_router)
+app.include_router(documents_router)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
