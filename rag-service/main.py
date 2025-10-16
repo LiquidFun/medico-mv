@@ -1,6 +1,8 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import tempfile
+import shutil
 from dotenv import load_dotenv
 
 from embedder import Embedder
@@ -62,7 +64,7 @@ async def health_check():
 @app.post("/index")
 async def index_document(request: IndexRequest):
     """
-    Index a document
+    Index a document by file path (for local files on the server)
 
     - Parses the document
     - Chunks the text
@@ -103,6 +105,77 @@ async def index_document(request: IndexRequest):
         raise HTTPException(status_code=404, detail="File not found")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/upload")
+async def upload_and_index(
+    file: UploadFile = File(...),
+    doc_id: str = Form(None),
+    metadata: str = Form("{}")
+):
+    """
+    Upload and index a document
+
+    - Receives file upload
+    - Saves to temporary location
+    - Parses, chunks, embeds, and indexes
+    - Cleans up temporary file
+    """
+    import json
+
+    # Use filename (without extension) as doc_id if not provided
+    if doc_id is None:
+        doc_id = os.path.splitext(file.filename)[0]
+
+    # Parse metadata JSON
+    try:
+        metadata_dict = json.loads(metadata)
+    except json.JSONDecodeError:
+        metadata_dict = {}
+
+    # Add filename to metadata
+    metadata_dict["filename"] = file.filename
+
+    # Create temporary file
+    temp_file = None
+    try:
+        # Create temp file with same extension as uploaded file
+        suffix = os.path.splitext(file.filename)[1]
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+            # Copy uploaded file to temp location
+            shutil.copyfileobj(file.file, temp_file)
+            temp_path = temp_file.name
+
+        # Parse document
+        text = parser.parse(temp_path)
+
+        if not text.strip():
+            raise HTTPException(status_code=400, detail="Document is empty")
+
+        # Chunk text
+        chunks = chunker.chunk_text(text, metadata=metadata_dict)
+
+        # Generate embeddings
+        texts = [chunk["text"] for chunk in chunks]
+        embeddings = embedder.embed(texts)
+
+        # Store in vector database
+        num_chunks = vector_store.add_chunks(doc_id, chunks, embeddings)
+
+        return {
+            "success": True,
+            "doc_id": doc_id,
+            "num_chunks": num_chunks,
+            "message": f"Indexed {num_chunks} chunks from {file.filename}"
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    finally:
+        # Clean up temporary file
+        if temp_file and os.path.exists(temp_path):
+            os.unlink(temp_path)
 
 
 @app.post("/search", response_model=SearchResult)

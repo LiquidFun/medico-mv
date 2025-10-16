@@ -43,15 +43,19 @@ def index(path: str, recursive: bool):
     for file in files:
         click.echo(f"Indexing: {file.name}...", nl=False)
         try:
-            response = requests.post(
-                f"{RAG_URL}/index",
-                json={
-                    "doc_id": file.stem,  # Use filename without extension as doc_id
-                    "file_path": str(file.absolute()),
-                    "metadata": {"original_path": str(file)}
-                },
-                timeout=300
-            )
+            # Upload file to RAG service
+            with open(file, 'rb') as f:
+                files_data = {'file': (file.name, f, 'application/octet-stream')}
+                data = {
+                    'doc_id': file.stem,  # Use filename without extension as doc_id
+                    'metadata': '{"original_path": "' + str(file) + '"}'
+                }
+                response = requests.post(
+                    f"{RAG_URL}/upload",
+                    files=files_data,
+                    data=data,
+                    timeout=300
+                )
             response.raise_for_status()
             result = response.json()
             click.echo(f" ✓ ({result['num_chunks']} chunks)")
@@ -90,8 +94,8 @@ def search(query: str, top_k: int):
         click.echo(f"Error: {e}")
 
 
-@cli.command()
-def list():
+@cli.command(name='list')
+def list_docs():
     """List all indexed documents"""
     try:
         response = requests.get(f"{RAG_URL}/documents", timeout=30)
