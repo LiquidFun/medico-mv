@@ -411,6 +411,13 @@
             animation-delay: -0.16s;
         }
 
+        .tool-loading {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            color: #667eea;
+        }
+
         @keyframes bounce {
             0%, 80%, 100% {
                 transform: scale(0);
@@ -544,6 +551,17 @@
         function renderToolCall(contentDiv, toolName, toolArgs) {
             console.log('DEBUG: renderToolCall called with:', { toolName, toolArgs: toolArgs.substring(0, 100) });
 
+            // Add loading indicator
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'tool-loading';
+            loadingDiv.innerHTML = `
+                <div class="typing-indicator">
+                    <span></span><span></span><span></span>
+                </div>
+                <span style="margin-left: 10px; color: #667eea; font-size: 14px;">Creating plot...</span>
+            `;
+            contentDiv.appendChild(loadingDiv);
+
             // Re-execute the tool to get the HTML
             if (toolName === 'create_plot') {
                 // Parse the arguments and regenerate the plot
@@ -572,6 +590,9 @@
                     })
                     .then(result => {
                         console.log('DEBUG: Tool execute result:', result);
+
+                        // Remove loading indicator
+                        loadingDiv.remove();
 
                         if (!result.html) {
                             console.error('No HTML in result:', result);
@@ -619,6 +640,7 @@
                     })
                     .catch(e => {
                         console.error('Error rendering tool call:', e);
+                        loadingDiv.remove();
                         contentDiv.innerHTML += `<p style="color: red;">Error loading plot: ${e.message}</p>`;
                     });
                 } catch (e) {
@@ -951,9 +973,11 @@
                 } else if (data.type === 'chunk') {
                     console.log('DEBUG WS: Got content chunk:', data.content.substring(0, 50));
                     currentContent += data.content;
-                    // Save any existing tool results
+                    // Save any existing tool results AND loading indicators
                     const toolResults = Array.from(currentMessageDiv.querySelectorAll('[data-tool-result]'));
-                    console.log('DEBUG WS: Existing tool results:', toolResults.length);
+                    const loadingIndicator = currentMessageDiv.querySelector('#tool-loading-indicator');
+                    console.log('DEBUG WS: Existing tool results:', toolResults.length, 'has loading indicator:', !!loadingIndicator);
+
                     // Render markdown content
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = marked.parse(currentContent);
@@ -962,12 +986,53 @@
                     while (tempDiv.firstChild) {
                         currentMessageDiv.appendChild(tempDiv.firstChild);
                     }
+                    // Then re-append loading indicator if it existed
+                    if (loadingIndicator) {
+                        currentMessageDiv.appendChild(loadingIndicator);
+                    }
                     // Then re-append tool results
                     toolResults.forEach(tr => currentMessageDiv.appendChild(tr));
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                } else if (data.type === 'tool_start') {
+                    console.log('DEBUG WS: Tool started:', data.tool_name);
+                    console.log('DEBUG WS: currentMessageDiv exists?', !!currentMessageDiv);
+
+                    // Make sure we have a message div
+                    if (!currentMessageDiv) {
+                        console.log('DEBUG WS: Creating message div for tool');
+                        removeTypingIndicator();
+                        currentMessageDiv = addMessage('assistant', '', true);
+                        currentContent = '';
+                    }
+
+                    // Add loading indicator
+                    const loadingDiv = document.createElement('div');
+                    loadingDiv.className = 'tool-loading';
+                    loadingDiv.id = 'tool-loading-indicator';
+
+                    let toolLabel = 'Executing tool';
+                    if (data.tool_name === 'create_plot') {
+                        toolLabel = 'Creating plot';
+                    }
+
+                    loadingDiv.innerHTML = `
+                        <div class="typing-indicator">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span style="margin-left: 10px; color: #667eea; font-size: 14px;">${toolLabel}...</span>
+                    `;
+                    currentMessageDiv.appendChild(loadingDiv);
+                    console.log('DEBUG WS: Loading indicator appended, currentMessageDiv children:', currentMessageDiv.children.length);
                     messagesContainer.scrollTop = messagesContainer.scrollHeight;
                 } else if (data.type === 'tool_result') {
                     console.log('DEBUG WS: Got tool result for tool:', data.tool_name);
                     console.log('DEBUG WS: Tool result HTML length:', data.html.length);
+
+                    // Remove loading indicator if it exists
+                    const loadingIndicator = document.getElementById('tool-loading-indicator');
+                    if (loadingIndicator) {
+                        loadingIndicator.remove();
+                    }
 
                     // Inject HTML plot directly into the message
                     const plotDiv = document.createElement('div');

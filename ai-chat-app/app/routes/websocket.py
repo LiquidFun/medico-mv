@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from jose import JWTError, jwt
 import json
 from datetime import datetime, timezone
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 
 from app.models import User, Conversation, ChatMessage, get_db
 from app.services import LLMService
@@ -16,6 +18,7 @@ router = APIRouter()
 llm_service = LLMService()
 rag_client = RAGClient()
 tool_registry = ToolRegistry()
+executor = ThreadPoolExecutor(max_workers=4)
 
 
 async def get_user_from_token(token: str, db: AsyncSession) -> User:
@@ -125,7 +128,7 @@ async def websocket_chat_endpoint(
 
                     # Stream response from LLM with tool support
                     assistant_response = ""
-                    tool_calls = []
+                    tool_execution_task = None
                     await websocket.send_json({"type": "start"})
 
                     async for chunk in llm_service.stream_chat_completion(
@@ -139,32 +142,57 @@ async def websocket_chat_endpoint(
                                 "type": "chunk",
                                 "content": chunk["content"],
                             })
+                        elif chunk["type"] == "tool_start":
+                            # Forward tool_start immediately to frontend
+                            print(f"DEBUG: Tool start detected: {chunk['tool_name']}")
+                            await websocket.send_json({
+                                "type": "tool_start",
+                                "tool_name": chunk["tool_name"],
+                            })
+                            print(f"DEBUG: Sent tool_start message to frontend")
                         elif chunk["type"] == "tool_call":
-                            # Execute the tool
+                            # Now we have complete arguments, execute the tool
                             tool_name = chunk["tool_name"]
                             arguments = chunk["arguments"]
-                            print(f"DEBUG: Executing tool {tool_name} with args: {arguments}")
+                            print(f"DEBUG: Tool call with complete args: {tool_name}")
 
-                            try:
-                                tool_result = tool_registry.execute_tool(tool_name, arguments)
-                                print(f"DEBUG: Tool result length: {len(tool_result)}")
+                            # Start tool execution as a background task
+                            async def execute_tool_async():
+                                print(f"DEBUG: Executing tool {tool_name} with args: {arguments}")
+                                try:
+                                    loop = asyncio.get_event_loop()
+                                    tool_result = await loop.run_in_executor(
+                                        executor,
+                                        tool_registry.execute_tool,
+                                        tool_name,
+                                        arguments
+                                    )
+                                    print(f"DEBUG: Tool result length: {len(tool_result)}")
 
-                                # Send the tool result as HTML
-                                await websocket.send_json({
-                                    "type": "tool_result",
-                                    "tool_name": tool_name,
-                                    "html": tool_result,
-                                })
+                                    # Send the tool result as HTML
+                                    await websocket.send_json({
+                                        "type": "tool_result",
+                                        "tool_name": tool_name,
+                                        "html": tool_result,
+                                    })
 
-                                # Append to assistant response for storage
-                                assistant_response += f"\n\n[Tool: {tool_name}]\n{json.dumps(arguments)}"
+                                    # Append to assistant response for storage
+                                    return f"\n\n[Tool: {tool_name}]\n{json.dumps(arguments)}"
 
-                            except Exception as e:
-                                print(f"DEBUG: Tool execution error: {str(e)}")
-                                await websocket.send_json({
-                                    "type": "chunk",
-                                    "content": f"\n\n[Error executing tool: {str(e)}]"
-                                })
+                                except Exception as e:
+                                    print(f"DEBUG: Tool execution error: {str(e)}")
+                                    await websocket.send_json({
+                                        "type": "chunk",
+                                        "content": f"\n\n[Error executing tool: {str(e)}]"
+                                    })
+                                    return ""
+
+                            tool_execution_task = asyncio.create_task(execute_tool_async())
+
+                    # Wait for any pending tool execution to complete
+                    if tool_execution_task:
+                        tool_response = await tool_execution_task
+                        assistant_response += tool_response
 
                     print(f"DEBUG: Final assistant_response: '{assistant_response}'")
                     await websocket.send_json({"type": "end"})

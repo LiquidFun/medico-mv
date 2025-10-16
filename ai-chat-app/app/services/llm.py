@@ -57,6 +57,8 @@ class LLMService:
         tool_args = ""
         chunk_count = 0
 
+        tool_start_sent = False
+
         async for chunk in stream:
             chunk_count += 1
             delta = chunk.choices[0].delta
@@ -74,6 +76,13 @@ class LLMService:
                     if tool_call.function.name:
                         tool_name = tool_call.function.name
                         print(f"DEBUG LLM: Tool name: {tool_name}")
+
+                        # Yield tool_start as soon as we know the tool name
+                        if not tool_start_sent:
+                            print(f"DEBUG LLM: Yielding tool_start for {tool_name}")
+                            yield {"type": "tool_start", "tool_name": tool_name}
+                            tool_start_sent = True
+
                     if tool_call.function.arguments:
                         tool_args += tool_call.function.arguments
                         print(f"DEBUG LLM: Tool args chunk: {tool_call.function.arguments}")
