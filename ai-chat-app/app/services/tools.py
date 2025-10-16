@@ -27,12 +27,32 @@ The plot supports multiple chart types:
 
 You can add multiple datasets to the same plot for comparison.
 
-IMPORTANT: Provide ALL the data points needed for the plot. Don't reference external data - include the actual values.
+IMPORTANT INSTRUCTIONS FOR DATA EXTRACTION:
+1. Provide ALL the data points needed for the plot. Don't reference external data - include the actual values.
+2. When extracting data from provided source documents:
+   - Carefully read through ALL provided sources to find relevant data points
+   - Look for tables, lists, or structured data in the text
+   - Extract EVERY data point mentioned, even if spread across multiple sources
+   - If data is incomplete, mention what's missing in your response before calling this tool
+3. For time-series data (years, months, dates):
+   - Extract ALL time points and their corresponding values
+   - Maintain chronological order
+   - Use consistent formats for dates/times
+4. For numerical data:
+   - Extract exact values as numbers
+   - Handle units appropriately (e.g., convert all to same unit)
+   - If ranges are given (e.g., "13.5-14.2"), use the midpoint or clarify with the user
+
+IMPORTANT: When creating plots from document data:
+- FIRST write explanatory text about the data you're plotting, including citations [1] [2] etc.
+- THEN call this tool to create the plot
+- AFTER the plot, you can add additional analysis or observations
 
 Examples:
 1. "Plot the function y=x^2 from -10 to 10" -> Generate x values from -10 to 10, calculate y values, use line chart
 2. "Show sales data for Q1: Jan=100, Feb=150, Mar=120" -> Use bar chart with these exact values
-3. "Compare temperature in NYC vs LA over a week" -> Use line chart with two datasets""",
+3. "Compare temperature in NYC vs LA over a week" -> Use line chart with two datasets
+4. From medical records: First write "I found hemoglobin data from 2019-2024 in the patient records [1]. The values show..." then call create_plot""",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -123,17 +143,22 @@ Examples:
         ]
 
         # Prepare datasets for Chart.js
+        # Collect all unique x values for consistent category ordering
+        all_x_values = []
+        for dataset in datasets:
+            all_x_values.extend(dataset['x_values'])
+        # Remove duplicates while preserving order
+        unique_x_values = list(dict.fromkeys(all_x_values))
+
         chart_datasets = []
         for i, dataset in enumerate(datasets):
             color = dataset.get('color', default_colors[i % len(default_colors)])
             chart_type = dataset.get('type', 'line')
 
+            # For category scales, use simple y values with corresponding x labels
             dataset_config = {
                 'label': dataset['label'],
-                'data': [
-                    {'x': x, 'y': y}
-                    for x, y in zip(dataset['x_values'], dataset['y_values'])
-                ],
+                'data': dataset['y_values'],
                 'borderColor': color,
                 'backgroundColor': color + '33',  # Add transparency
                 'borderWidth': 2,
@@ -179,6 +204,7 @@ Examples:
 
             new Chart(ctx, {{
                 data: {{
+                    labels: {json.dumps(unique_x_values)},
                     datasets: {json.dumps(chart_datasets)}
                 }},
                 options: {{
@@ -204,15 +230,14 @@ Examples:
                     }},
                     scales: {{
                         x: {{
-                            type: 'linear',
+                            type: 'category',
                             title: {{
                                 display: true,
                                 text: {json.dumps(x_label)}
                             }},
                             ticks: {{
-                                callback: function(value) {{
-                                    return value;
-                                }}
+                                maxRotation: 45,
+                                minRotation: 45
                             }}
                         }},
                         y: {{
@@ -220,7 +245,7 @@ Examples:
                                 display: true,
                                 text: {json.dumps(y_label)}
                             }},
-                            beginAtZero: true
+                            beginAtZero: false
                         }}
                     }}
                 }}

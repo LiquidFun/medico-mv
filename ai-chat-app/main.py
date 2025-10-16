@@ -1,17 +1,17 @@
+from dotenv import load_dotenv
+load_dotenv()  # noqa
+
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 import os
-from dotenv import load_dotenv
 from sqlalchemy import select
 
 from app.models import init_db, User, get_db
 from app.routes import auth_router, chat_router, ws_router, tools_router, documents_router
 from app.services.auth import get_password_hash
 
-# Load environment variables
-load_dotenv()
 
 
 @asynccontextmanager
@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
                 admin_user = User(
                     username="admin",
                     email="admin@example.com",
-                    hashed_password=get_password_hash("password"),
+                    hashed_password=get_password_hash(os.getenv("ADMIN_PASSWORD", "password")),
                     display_name="Ulrike Schlüter"
                 )
                 db.add(admin_user)
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "main:app",
-        host="0.0.0.0",
+        host="127.0.0.1",
         port=8000,
         reload=True,
     )

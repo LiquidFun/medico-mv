@@ -107,7 +107,11 @@ async def websocket_chat_endpoint(
                         await db.commit()
 
                     # Search for relevant context from RAG with citation metadata
-                    rag_result = await rag_client.search_with_metadata(user_message, top_k=3)
+                    # Increase top_k if query involves plotting/visualization to get more data
+                    top_k = 5 if any(keyword in user_message.lower() for keyword in
+                                     ['plot', 'graph', 'chart', 'visualize', 'visualisieren',
+                                      'diagramm', 'grafik', 'zeige', 'show']) else 3
+                    rag_result = await rag_client.search_with_metadata(user_message, top_k=top_k)
                     context_chunks = rag_result.get("chunks", [])
                     source_map = rag_result.get("sources", {})
 
@@ -117,10 +121,13 @@ async def websocket_chat_endpoint(
                         for msg in messages
                     ]
 
-                    # Language instruction
+                    # Get current date for context
+                    current_date = datetime.now(timezone.utc).strftime("%d.%m.%Y")
+
+                    # Language instruction with context
                     language_instructions = {
-                        "de": "WICHTIG: Du MUSST auf alle Anfragen auf Deutsch antworten. Antworte niemals auf Englisch oder einer anderen Sprache, egal in welcher Sprache der Benutzer fragt.",
-                        "en": "IMPORTANT: You MUST respond to all queries in English. Never respond in German or any other language, regardless of what language the user asks in."
+                        "de": f"WICHTIG: Du MUSST auf alle Anfragen auf Deutsch antworten. Antworte niemals auf Englisch oder einer anderen Sprache, egal in welcher Sprache der Benutzer fragt.\n\n**KONTEXT:**\n- Heutiges Datum: {current_date}\n- Standort: Greifswald, Deutschland",
+                        "en": f"IMPORTANT: You MUST respond to all queries in English. Never respond in German or any other language, regardless of what language the user asks in.\n\n**CONTEXT:**\n- Today's date: {current_date}\n- Location: Greifswald, Germany"
                     }
                     language_instruction = language_instructions.get(language, language_instructions["de"])
 
@@ -146,6 +153,17 @@ async def websocket_chat_endpoint(
                                 "- Place citations immediately after the relevant statement\n"
                                 "- You can use multiple citations: [1] [2]\n"
                                 "- Always cite factual claims, especially medical information\n\n"
+                                "**DATA EXTRACTION FOR PLOTS:**\n"
+                                "- When asked to plot/visualize data, carefully extract ALL numerical values from the sources\n"
+                                "- Look for tables, lists, and structured data across ALL provided sources\n"
+                                "- Extract every single data point, even if spread across multiple sources\n"
+                                "- Maintain chronological order for time-series data\n"
+                                "- If data is incomplete or missing, inform the user before creating the plot\n\n"
+                                "**WORKFLOW FOR PLOTS WITH DOCUMENT DATA:**\n"
+                                "1. FIRST: Write text explaining what data you found and cite sources [1] [2]\n"
+                                "2. THEN: Call the create_plot tool with the extracted data\n"
+                                "3. AFTER: Add any additional analysis or observations about the plot\n"
+                                "Example: 'I found 13 hemoglobin measurements from 2019-2024 in the patient records [1]. The values range from 8.6 to 9.3 mmol/l.' [then call create_plot] [then add] 'The trend shows relatively stable values with minor fluctuations.'\n\n"
                                 f"Available Sources:\n\n{context_text}"
                             )
                         }
