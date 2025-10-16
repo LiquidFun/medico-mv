@@ -171,20 +171,36 @@
             letter-spacing: 0.5px;
             padding: 0 8px 10px 8px;
             margin: 0;
+            flex: 1;
+        }
+
+        .conversations-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 10px 0 10px;
+            flex-shrink: 0;
+            gap: 10px;
         }
 
         .new-chat-btn {
-            width: 100%;
-            padding: 12px;
+            width: 28px;
+            height: 28px;
+            padding: 0;
             background: #ac0040;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 20px;
+            font-weight: 400;
             transition: background 0.3s;
             font-family: 'Source Sans Pro', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            line-height: 1;
         }
 
         .new-chat-btn:hover {
@@ -207,7 +223,7 @@
         }
 
         .conversation-item {
-            padding: 8px 12px;
+            padding: 6px 12px;
             margin-bottom: 4px;
             background: white;
             border-radius: 4px;
@@ -229,12 +245,15 @@
         .conversation-title {
             font-weight: 600;
             font-size: 13px;
-            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
         .conversation-date {
             font-size: 10px;
             opacity: 0.7;
+            font-weight: 400;
         }
 
         .main-content {
@@ -270,10 +289,21 @@
         }
 
         .user-info {
-            font-size: 9px;
+            font-size: 11px;
             color: #586069;
-            margin-top: 4px;
-            text-align: right;
+            margin-top: 6px;
+            text-align: left;
+        }
+
+        .sidebar-footer {
+            padding: 15px;
+            border-top: 1px solid #e1e4e8;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
         }
 
         .header-right {
@@ -306,13 +336,13 @@
         }
 
         .logout-btn {
-            padding: 8px 16px;
+            padding: 6px 12px;
             background: #ac0040;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 600;
             font-family: 'Source Sans Pro', sans-serif;
         }
@@ -369,14 +399,14 @@
         .database-list {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 4px;
         }
 
         .database-item {
             display: flex;
             align-items: center;
             cursor: pointer;
-            padding: 4px;
+            padding: 2px;
             border-radius: 3px;
             transition: background 0.2s;
             user-select: none;
@@ -952,13 +982,10 @@
                 <h2 id="chatInterfaceTitle">Chat-Oberfläche</h2>
             </div>
 
-            <div class="sidebar-header" style="padding: 15px 20px; border-bottom: none;">
-                <button class="new-chat-btn" id="newChatBtn">+ Neuer Chat</button>
-            </div>
-
             <div class="conversations-wrapper">
-                <div style="padding: 15px 10px 0 10px; flex-shrink: 0;">
+                <div class="conversations-header">
                     <h3 class="category-title" id="conversationsTitle">Konversationen</h3>
+                    <button class="new-chat-btn" id="newChatBtn">+</button>
                 </div>
                 <div class="conversations-list" id="conversationsList"></div>
             </div>
@@ -1028,6 +1055,11 @@
                     </label>
                 </div>
             </div>
+
+            <div class="sidebar-footer">
+                <button class="logout-btn" id="logoutBtn">Abmelden</button>
+                <div class="user-info" id="userInfo"></div>
+            </div>
         </div>
 
         <div class="main-content">
@@ -1041,10 +1073,6 @@
                         <button class="language-btn" id="langEn" data-lang="en">EN</button>
                     </div>
                     <img src="https://www.med.uni-rostock.de/typo3conf/ext/w3_base/Resources/Public/Img/logos/logo_unimed.png" alt="Universitätsmedizin Rostock" style="height: 40px; width: auto;">
-                    <div class="header-right-section">
-                        <button class="logout-btn" id="logoutBtn">Abmelden</button>
-                        <div class="user-info" id="userInfo"></div>
-                    </div>
                 </div>
             </div>
 
@@ -1249,7 +1277,7 @@
 
             // Sidebar
             document.getElementById('chatInterfaceTitle').textContent = t('chatInterface');
-            document.getElementById('newChatBtn').textContent = t('newChat');
+            document.getElementById('newChatBtn').textContent = '+';
             document.getElementById('dataSourcesText').textContent = t('dataSources');
             document.getElementById('modePatient').textContent = t('patientData');
             document.getElementById('modeMedical').textContent = t('medicalData');
@@ -1878,8 +1906,10 @@
                     }
 
                     item.innerHTML = `
-                        <div class="conversation-title">${conv.title}</div>
-                        <div class="conversation-date">${formatDate(conv.updated_at)}</div>
+                        <div class="conversation-title">
+                            ${conv.title}
+                            <span class="conversation-date">- ${formatDate(conv.updated_at)}</span>
+                        </div>
                     `;
 
                     item.addEventListener('click', () => loadConversation(conv.id));
