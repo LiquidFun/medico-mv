@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 import os
 import tempfile
 import shutil
@@ -16,6 +17,10 @@ load_dotenv()
 # Set Hugging Face cache directory to avoid permission issues
 if not os.getenv("HF_HOME"):
     os.environ["HF_HOME"] = "./data/model_cache"
+
+# Create documents storage directory
+DOCUMENTS_DIR = os.getenv("DOCUMENTS_DIR", "./data/documents")
+os.makedirs(DOCUMENTS_DIR, exist_ok=True)
 
 # Initialize FastAPI
 app = FastAPI(title="RAG Service", version="1.0.0")
@@ -138,6 +143,7 @@ async def upload_and_index(
 
     # Create temporary file
     temp_file = None
+    temp_path = None
     try:
         # Create temp file with same extension as uploaded file
         suffix = os.path.splitext(file.filename)[1]
@@ -146,14 +152,17 @@ async def upload_and_index(
             shutil.copyfileobj(file.file, temp_file)
             temp_path = temp_file.name
 
-        # Parse document
-        text = parser.parse(temp_path)
+        # Parse document with page tracking
+        pages = parser.parse_with_pages(temp_path)
 
-        if not text.strip():
+        if not pages or all(not p["text"].strip() for p in pages):
             raise HTTPException(status_code=400, detail="Document is empty")
 
-        # Chunk text
-        chunks = chunker.chunk_text(text, metadata=metadata_dict)
+        # Add file metadata
+        metadata_dict["file_type"] = suffix
+
+        # Chunk with page preservation
+        chunks = chunker.chunk_pages(pages, base_metadata=metadata_dict)
 
         # Generate embeddings
         texts = [chunk["text"] for chunk in chunks]
@@ -161,6 +170,10 @@ async def upload_and_index(
 
         # Store in vector database
         num_chunks = vector_store.add_chunks(doc_id, chunks, embeddings)
+
+        # Save original file for later retrieval
+        saved_path = os.path.join(DOCUMENTS_DIR, f"{doc_id}{suffix}")
+        shutil.copy(temp_path, saved_path)
 
         return {
             "success": True,
@@ -174,7 +187,7 @@ async def upload_and_index(
 
     finally:
         # Clean up temporary file
-        if temp_file and os.path.exists(temp_path):
+        if temp_path and os.path.exists(temp_path):
             os.unlink(temp_path)
 
 
@@ -240,6 +253,31 @@ async def clear_all_documents():
         return {"success": True, "message": "All documents cleared"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/document/{doc_id}/file")
+async def serve_document(doc_id: str):
+    """Serve original document file for viewing"""
+    # Try to find the file with different extensions
+    for ext in ['.pdf', '.txt', '.docx', '.doc']:
+        file_path = os.path.join(DOCUMENTS_DIR, f"{doc_id}{ext}")
+        if os.path.exists(file_path):
+            # Determine media type
+            if ext == '.pdf':
+                media_type = "application/pdf"
+            elif ext in ['.docx', '.doc']:
+                media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            else:
+                media_type = "text/plain"
+
+            return FileResponse(
+                file_path,
+                media_type=media_type,
+                filename=f"{doc_id}{ext}",
+                headers={"Content-Disposition": f"inline; filename={doc_id}{ext}"}
+            )
+
+    raise HTTPException(status_code=404, detail=f"Document file not found: {doc_id}")
 
 
 if __name__ == "__main__":

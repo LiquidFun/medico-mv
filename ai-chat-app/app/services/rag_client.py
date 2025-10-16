@@ -27,6 +27,49 @@ class RAGClient:
             print(f"RAG search error: {e}")
             return []
 
+    async def search_with_metadata(self, query: str, top_k: int = 3) -> dict:
+        """
+        Search and return chunks with citation source mapping
+
+        Returns:
+            {
+                "chunks": [...],  # Original chunks
+                "sources": {      # Mapping for citations
+                    "1": {
+                        "doc_id": "...",
+                        "filename": "...",
+                        "page": 5,
+                        "chunk_id": 0
+                    },
+                    ...
+                }
+            }
+        """
+        chunks = await self.search(query, top_k)
+
+        # Build source mapping
+        sources = {}
+        for idx, chunk in enumerate(chunks, start=1):
+            sources[str(idx)] = {
+                "doc_id": chunk.get("doc_id", "unknown"),
+                "filename": chunk.get("metadata", {}).get("filename", "Unknown"),
+                "page": chunk.get("metadata", {}).get("page", 1),
+                "chunk_id": chunk.get("chunk_id", 0)
+            }
+
+        return {"chunks": chunks, "sources": sources}
+
+    async def get_document_file(self, doc_id: str) -> bytes:
+        """Fetch PDF file from RAG service"""
+        try:
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(f"{self.base_url}/document/{doc_id}/file")
+                response.raise_for_status()
+                return response.content
+        except Exception as e:
+            print(f"RAG document fetch error: {e}")
+            raise
+
     async def health_check(self) -> bool:
         """Check if RAG service is available"""
         try:

@@ -29,3 +29,31 @@ class Chunker:
                 })
 
         return chunks if chunks else [{"text": text, "metadata": {**metadata, "chunk_index": 0}}]
+
+    def chunk_pages(self, pages: list[dict], base_metadata: dict) -> list[dict]:
+        """
+        Chunk pages while preserving page numbers
+
+        Args:
+            pages: List of {"page_number": int, "text": str}
+            base_metadata: Base metadata to include in all chunks
+
+        Returns: List of chunks with page metadata
+        """
+        all_chunks = []
+
+        for page_data in pages:
+            page_num = page_data["page_number"]
+            text = page_data["text"]
+
+            # Create metadata with page number
+            page_metadata = {
+                **base_metadata,
+                "page": page_num
+            }
+
+            # Chunk this page's text
+            page_chunks = self.chunk_text(text, page_metadata)
+            all_chunks.extend(page_chunks)
+
+        return all_chunks

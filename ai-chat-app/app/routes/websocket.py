@@ -105,8 +105,10 @@ async def websocket_chat_endpoint(
                         conversation.title = title
                         await db.commit()
 
-                    # Search for relevant context from RAG
-                    context_chunks = await rag_client.search(user_message, top_k=3)
+                    # Search for relevant context from RAG with citation metadata
+                    rag_result = await rag_client.search_with_metadata(user_message, top_k=3)
+                    context_chunks = rag_result.get("chunks", [])
+                    source_map = rag_result.get("sources", {})
 
                     # Format messages for LLM
                     llm_messages = [
@@ -114,15 +116,29 @@ async def websocket_chat_endpoint(
                         for msg in messages
                     ]
 
-                    # Inject RAG context if available
+                    # Inject RAG context with citation instructions if available
                     if context_chunks:
-                        context_text = "\n\n".join([
-                            f"[Source: {chunk['metadata'].get('filename', 'Unknown')}]\n{chunk['text']}"
-                            for chunk in context_chunks
-                        ])
+                        context_parts = []
+                        for idx, chunk in enumerate(context_chunks, start=1):
+                            metadata = chunk.get("metadata", {})
+                            context_parts.append(
+                                f"[Source {idx}] From: {metadata.get('filename', 'Unknown')}, "
+                                f"Page {metadata.get('page', '?')}\n{chunk['text']}"
+                            )
+
+                        context_text = "\n\n".join(context_parts)
                         system_message = {
                             "role": "system",
-                            "content": f"Use the following context to help answer the user's question. If the context is relevant, reference it in your answer:\n\n{context_text}"
+                            "content": (
+                                "You are a helpful medical AI assistant. Use the provided sources "
+                                "to answer questions accurately.\n\n"
+                                "**CITATION RULES:**\n"
+                                "- When using information from a source, cite it as [1], [2], etc.\n"
+                                "- Place citations immediately after the relevant statement\n"
+                                "- You can use multiple citations: [1] [2]\n"
+                                "- Always cite factual claims, especially medical information\n\n"
+                                f"Available Sources:\n\n{context_text}"
+                            )
                         }
                         llm_messages.insert(0, system_message)
 
@@ -196,6 +212,13 @@ async def websocket_chat_endpoint(
 
                     print(f"DEBUG: Final assistant_response: '{assistant_response}'")
                     await websocket.send_json({"type": "end"})
+
+                    # Send source map for citations if we had RAG context
+                    if source_map:
+                        await websocket.send_json({
+                            "type": "sources",
+                            "sources": source_map
+                        })
 
                     # Save assistant response to database
                     assistant_message = ChatMessage(
