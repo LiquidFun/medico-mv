@@ -75,6 +75,7 @@ async def websocket_chat_endpoint(
                     data = await websocket.receive_text()
                     message_data = json.loads(data)
                     user_message = message_data.get("message", "")
+                    language = message_data.get("language", "de")  # Default to German
 
                     if not user_message.strip():
                         continue
@@ -116,6 +117,13 @@ async def websocket_chat_endpoint(
                         for msg in messages
                     ]
 
+                    # Language instruction
+                    language_instructions = {
+                        "de": "WICHTIG: Du MUSST auf alle Anfragen auf Deutsch antworten. Antworte niemals auf Englisch oder einer anderen Sprache, egal in welcher Sprache der Benutzer fragt.",
+                        "en": "IMPORTANT: You MUST respond to all queries in English. Never respond in German or any other language, regardless of what language the user asks in."
+                    }
+                    language_instruction = language_instructions.get(language, language_instructions["de"])
+
                     # Inject RAG context with citation instructions if available
                     if context_chunks:
                         context_parts = []
@@ -130,6 +138,7 @@ async def websocket_chat_endpoint(
                         system_message = {
                             "role": "system",
                             "content": (
+                                f"{language_instruction}\n\n"
                                 "You are a helpful medical AI assistant. Use the provided sources "
                                 "to answer questions accurately.\n\n"
                                 "**CITATION RULES:**\n"
@@ -139,6 +148,13 @@ async def websocket_chat_endpoint(
                                 "- Always cite factual claims, especially medical information\n\n"
                                 f"Available Sources:\n\n{context_text}"
                             )
+                        }
+                        llm_messages.insert(0, system_message)
+                    else:
+                        # Even without RAG context, add language instruction
+                        system_message = {
+                            "role": "system",
+                            "content": f"{language_instruction}\n\nYou are a helpful medical AI assistant."
                         }
                         llm_messages.insert(0, system_message)
 

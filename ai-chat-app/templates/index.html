@@ -312,6 +312,35 @@
             background: #8b0033;
         }
 
+        .language-selector {
+            display: flex;
+            gap: 4px;
+            border: 1px solid #e1e4e8;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .language-btn {
+            padding: 6px 12px;
+            background: white;
+            color: #24292e;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Source Sans Pro', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .language-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .language-btn.active {
+            background: #ac0040;
+            color: white;
+        }
+
         .database-section {
             padding: 15px;
             border-top: 1px solid #e1e4e8;
@@ -865,31 +894,31 @@
         <div class="auth-logo">
             <img src="https://www.med.uni-rostock.de/typo3conf/ext/w3_base/Resources/Public/Img/logos/logo_unimed.png" alt="Universitätsmedizin Rostock">
         </div>
-        <h1 id="authTitle">Login</h1>
+        <h1 id="authTitle">Anmelden</h1>
         <div id="authError" class="error-message hidden"></div>
 
         <form id="authForm">
             <div class="form-group hidden" id="emailGroup">
-                <label for="email">Email</label>
+                <label for="email" id="emailLabel">E-Mail</label>
                 <input type="email" id="email" required>
             </div>
 
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="username" id="usernameLabel">Benutzername</label>
                 <input type="text" id="username" required>
             </div>
 
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password" id="passwordLabel">Passwort</label>
                 <input type="password" id="password" required>
             </div>
 
-            <button type="submit" class="auth-btn" id="authSubmitBtn">Login</button>
+            <button type="submit" class="auth-btn" id="authSubmitBtn">Anmelden</button>
         </form>
 
         <div class="auth-switch">
-            <span id="authSwitchText">Don't have an account?</span>
-            <a id="authSwitchLink">Register</a>
+            <span id="authSwitchText">Noch kein Konto?</span>
+            <a id="authSwitchLink">Registrieren</a>
         </div>
     </div>
 
@@ -898,33 +927,33 @@
         <div class="sidebar">
             <div class="sidebar-header">
                 <img src="/static/logo.png" alt="Logo" class="sidebar-logo">
-                <h2>Chat Interface</h2>
+                <h2 id="chatInterfaceTitle">Chat-Oberfläche</h2>
             </div>
 
             <div class="sidebar-header" style="padding: 15px 20px; border-bottom: none;">
-                <button class="new-chat-btn" id="newChatBtn">+ New Chat</button>
+                <button class="new-chat-btn" id="newChatBtn">+ Neuer Chat</button>
             </div>
 
             <div class="mode-selector">
                 <div class="mode-dropdown">
-                    <button class="mode-button" id="modeButton">Data Sources ▼</button>
+                    <button class="mode-button" id="modeButton"><span id="dataSourcesText">Datenquellen</span> ▼</button>
                     <div class="mode-menu" id="modeMenu">
-                        <div class="mode-option" data-mode="patient">Patient Data</div>
-                        <div class="mode-option" data-mode="admin">Admin Data</div>
-                        <div class="mode-option" data-mode="research">Research Data</div>
+                        <div class="mode-option" data-mode="patient" id="modePatient">Patientendaten</div>
+                        <div class="mode-option" data-mode="admin" id="modeAdmin">Verwaltungsdaten</div>
+                        <div class="mode-option" data-mode="research" id="modeResearch">Forschungsdaten</div>
                     </div>
                 </div>
             </div>
 
             <div class="conversations-wrapper">
                 <div style="padding: 15px 10px 0 10px; flex-shrink: 0;">
-                    <h3 class="category-title">Conversations</h3>
+                    <h3 class="category-title" id="conversationsTitle">Konversationen</h3>
                 </div>
                 <div class="conversations-list" id="conversationsList"></div>
             </div>
 
             <div class="database-section">
-                <div class="database-title">Connected Databases</div>
+                <div class="database-title" id="databasesTitle">Verbundene Datenbanken</div>
                 <div class="database-list">
                     <label class="database-item">
                         <input type="checkbox" class="database-checkbox" checked>
@@ -982,13 +1011,17 @@
             <div class="chat-header">
                 <div class="header-left">
                     <div>
-                        <h1>AI Chat</h1>
+                        <h1 id="aiChatTitle">KI-Chat</h1>
                         <div class="user-info" id="userInfo"></div>
                     </div>
                 </div>
                 <div class="header-right">
+                    <div class="language-selector">
+                        <button class="language-btn active" id="langDe" data-lang="de">DE</button>
+                        <button class="language-btn" id="langEn" data-lang="en">EN</button>
+                    </div>
                     <img src="https://www.med.uni-rostock.de/typo3conf/ext/w3_base/Resources/Public/Img/logos/logo_unimed.png" alt="Universitätsmedizin Rostock" style="height: 50px; width: auto;">
-                    <button class="logout-btn" id="logoutBtn">Logout</button>
+                    <button class="logout-btn" id="logoutBtn">Abmelden</button>
                 </div>
             </div>
 
@@ -1007,10 +1040,10 @@
                         type="text"
                         class="message-input"
                         id="messageInput"
-                        placeholder="Type your message..."
+                        placeholder="Nachricht eingeben..."
                         autocomplete="off"
                     >
-                    <button type="submit" class="send-btn" id="sendBtn">Send</button>
+                    <button type="submit" class="send-btn" id="sendBtn">Senden</button>
                 </form>
             </div>
         </div>
@@ -1020,14 +1053,14 @@
     <div id="pdfModal" class="pdf-modal">
         <div class="pdf-modal-content">
             <div class="pdf-modal-header">
-                <h3 id="pdfModalTitle">Document Viewer</h3>
+                <h3 id="pdfModalTitle">Dokumentenbetrachter</h3>
                 <div class="pdf-modal-controls">
                     <div class="pdf-page-nav">
-                        <button id="pdfPrevPage" class="pdf-nav-btn">Previous</button>
-                        <span id="pdfPageInfo" class="pdf-page-info">Page 1 of 1</span>
-                        <button id="pdfNextPage" class="pdf-nav-btn">Next</button>
+                        <button id="pdfPrevPage" class="pdf-nav-btn">Zurück</button>
+                        <span id="pdfPageInfo" class="pdf-page-info">Seite 1 von 1</span>
+                        <button id="pdfNextPage" class="pdf-nav-btn">Weiter</button>
                     </div>
-                    <button id="pdfCloseBtn" class="pdf-close-btn">Close</button>
+                    <button id="pdfCloseBtn" class="pdf-close-btn">Schließen</button>
                 </div>
             </div>
             <div class="pdf-modal-body">
@@ -1035,9 +1068,9 @@
                     <canvas id="pdfCanvas"></canvas>
                 </div>
                 <div class="pdf-text-panel" id="pdfTextPanel">
-                    <h4>Referenced Text</h4>
+                    <h4 id="pdfReferencedTextTitle">Referenzierter Text</h4>
                     <div class="pdf-text-content" id="pdfTextContent">
-                        Click on a citation to view the referenced text from this document.
+                        Klicken Sie auf eine Zitation, um den referenzierten Text aus diesem Dokument anzuzeigen.
                     </div>
                 </div>
             </div>
@@ -1048,6 +1081,118 @@
         // Configure PDF.js worker
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+        // Translations
+        const translations = {
+            de: {
+                // Auth
+                login: 'Anmelden',
+                register: 'Registrieren',
+                email: 'E-Mail',
+                username: 'Benutzername',
+                password: 'Passwort',
+                noAccount: 'Noch kein Konto?',
+                haveAccount: 'Bereits ein Konto?',
+
+                // Sidebar
+                chatInterface: 'Chat-Oberfläche',
+                newChat: '+ Neuer Chat',
+                dataSources: 'Datenquellen',
+                conversations: 'Konversationen',
+                connectedDatabases: 'Verbundene Datenbanken',
+
+                // Data source modes
+                patientData: 'Patientendaten',
+                adminData: 'Verwaltungsdaten',
+                researchData: 'Forschungsdaten',
+
+                // Header
+                aiChat: 'KI-Chat',
+                loggedInAs: 'Angemeldet als',
+                logout: 'Abmelden',
+
+                // Messages
+                welcomeMessage: 'Hallo! Ich bin Ihr KI-Assistent. Wie kann ich Ihnen heute helfen?',
+                typeMessage: 'Nachricht eingeben...',
+                send: 'Senden',
+
+                // PDF Viewer
+                documentViewer: 'Dokumentenbetrachter',
+                referencedText: 'Referenzierter Text',
+                sources: 'Quellen',
+                page: 'Seite',
+                previous: 'Zurück',
+                next: 'Weiter',
+                close: 'Schließen',
+                of: 'von',
+
+                // Date formats
+                today: 'Heute',
+                yesterday: 'Gestern',
+                daysAgo: 'Tage her',
+
+                // Tool messages
+                creatingPlot: 'Erstelle Diagramm...',
+                executingTool: 'Führe Werkzeug aus...',
+
+                // System prompt instruction
+                systemLanguageInstruction: 'WICHTIG: Du MUSST auf alle Anfragen auf Deutsch antworten. Antworte niemals auf Englisch oder einer anderen Sprache, egal in welcher Sprache der Benutzer fragt.'
+            },
+            en: {
+                // Auth
+                login: 'Login',
+                register: 'Register',
+                email: 'Email',
+                username: 'Username',
+                password: 'Password',
+                noAccount: "Don't have an account?",
+                haveAccount: 'Already have an account?',
+
+                // Sidebar
+                chatInterface: 'Chat Interface',
+                newChat: '+ New Chat',
+                dataSources: 'Data Sources',
+                conversations: 'Conversations',
+                connectedDatabases: 'Connected Databases',
+
+                // Data source modes
+                patientData: 'Patient Data',
+                adminData: 'Admin Data',
+                researchData: 'Research Data',
+
+                // Header
+                aiChat: 'AI Chat',
+                loggedInAs: 'Logged in as',
+                logout: 'Logout',
+
+                // Messages
+                welcomeMessage: "Hello! I'm your AI assistant. How can I help you today?",
+                typeMessage: 'Type your message...',
+                send: 'Send',
+
+                // PDF Viewer
+                documentViewer: 'Document Viewer',
+                referencedText: 'Referenced Text',
+                sources: 'Sources',
+                page: 'Page',
+                previous: 'Previous',
+                next: 'Next',
+                close: 'Close',
+                of: 'of',
+
+                // Date formats
+                today: 'Today',
+                yesterday: 'Yesterday',
+                daysAgo: 'days ago',
+
+                // Tool messages
+                creatingPlot: 'Creating plot...',
+                executingTool: 'Executing tool...',
+
+                // System prompt instruction
+                systemLanguageInstruction: 'IMPORTANT: You MUST respond to all queries in English. Never respond in German or any other language, regardless of what language the user asks in.'
+            }
+        };
+
         // State management
         let state = {
             token: localStorage.getItem('token') || null,
@@ -1055,8 +1200,57 @@
             currentConversationId: null,
             ws: null,
             isAuthMode: 'login',
-            citationSources: {} // Stores citation metadata
+            citationSources: {}, // Stores citation metadata
+            language: localStorage.getItem('language') || 'de' // Default to German
         };
+
+        // Get translation
+        function t(key) {
+            return translations[state.language][key] || key;
+        }
+
+        // Update UI with current language
+        function updateUI() {
+            // Auth screen
+            document.getElementById('authTitle').textContent = t(state.isAuthMode);
+            document.getElementById('authSubmitBtn').textContent = t(state.isAuthMode);
+            document.getElementById('emailLabel').textContent = t('email');
+            document.getElementById('usernameLabel').textContent = t('username');
+            document.getElementById('passwordLabel').textContent = t('password');
+            document.getElementById('authSwitchText').textContent = state.isAuthMode === 'login' ? t('noAccount') : t('haveAccount');
+            document.getElementById('authSwitchLink').textContent = state.isAuthMode === 'login' ? t('register') : t('login');
+
+            // Sidebar
+            document.getElementById('chatInterfaceTitle').textContent = t('chatInterface');
+            document.getElementById('newChatBtn').textContent = t('newChat');
+            document.getElementById('dataSourcesText').textContent = t('dataSources');
+            document.getElementById('modePatient').textContent = t('patientData');
+            document.getElementById('modeAdmin').textContent = t('adminData');
+            document.getElementById('modeResearch').textContent = t('researchData');
+            document.getElementById('conversationsTitle').textContent = t('conversations');
+            document.getElementById('databasesTitle').textContent = t('connectedDatabases');
+
+            // Header
+            document.getElementById('aiChatTitle').textContent = t('aiChat');
+            document.getElementById('logoutBtn').textContent = t('logout');
+            if (state.user) {
+                document.getElementById('userInfo').textContent = `${t('loggedInAs')} ${state.user.username}`;
+            }
+
+            // Message input
+            document.getElementById('messageInput').placeholder = t('typeMessage');
+            document.getElementById('sendBtn').textContent = t('send');
+
+            // PDF Modal buttons
+            document.getElementById('pdfPrevPage').textContent = t('previous');
+            document.getElementById('pdfNextPage').textContent = t('next');
+            document.getElementById('pdfCloseBtn').textContent = t('close');
+            document.getElementById('pdfReferencedTextTitle').textContent = t('referencedText');
+
+            // Language buttons
+            document.getElementById('langDe').classList.toggle('active', state.language === 'de');
+            document.getElementById('langEn').classList.toggle('active', state.language === 'en');
+        }
 
         // DOM elements
         const authScreen = document.getElementById('authScreen');
@@ -1081,6 +1275,22 @@
         const modeMenu = document.getElementById('modeMenu');
         const modeOptions = document.querySelectorAll('.mode-option');
         let currentMode = null;
+
+        // Language switcher
+        document.getElementById('langDe').addEventListener('click', () => {
+            state.language = 'de';
+            localStorage.setItem('language', 'de');
+            updateUI();
+        });
+
+        document.getElementById('langEn').addEventListener('click', () => {
+            state.language = 'en';
+            localStorage.setItem('language', 'en');
+            updateUI();
+        });
+
+        // Initialize UI with current language
+        updateUI();
 
         modeButton.addEventListener('click', () => {
             modeMenu.classList.toggle('open');
@@ -1123,9 +1333,9 @@
             const diff = now - date;
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-            if (days === 0) return 'Today';
-            if (days === 1) return 'Yesterday';
-            if (days < 7) return `${days} days ago`;
+            if (days === 0) return t('today');
+            if (days === 1) return t('yesterday');
+            if (days < 7) return `${days} ${t('daysAgo')}`;
             return date.toLocaleDateString();
         }
 
@@ -1148,13 +1358,13 @@
             footerDiv.className = 'citation-footer';
 
             const footerTitle = document.createElement('div');
-            footerTitle.innerHTML = '<strong>Sources:</strong>';
+            footerTitle.innerHTML = `<strong>${t('sources')}:</strong>`;
             footerDiv.appendChild(footerTitle);
 
             Object.entries(sources).forEach(([num, source]) => {
                 const sourceDiv = document.createElement('div');
                 sourceDiv.className = 'citation-source';
-                sourceDiv.innerHTML = `[${num}] ${source.filename}, Page ${source.page}`;
+                sourceDiv.innerHTML = `[${num}] ${source.filename}, ${t('page')} ${source.page}`;
                 sourceDiv.dataset.citation = num;
                 sourceDiv.addEventListener('click', () => openPdfModal(source));
                 footerDiv.appendChild(sourceDiv);
@@ -1170,7 +1380,7 @@
             const pageInfo = document.getElementById('pdfPageInfo');
             const textContent = document.getElementById('pdfTextContent');
 
-            title.textContent = `${source.filename} - Page ${source.page}`;
+            title.textContent = `${source.filename} - ${t('page')} ${source.page}`;
             modal.classList.add('open');
 
             // Display the referenced chunk text
@@ -1228,7 +1438,7 @@
             }).promise;
 
             document.getElementById('pdfPageInfo').textContent =
-                `Page ${pageNum} of ${currentPdfDoc.numPages}`;
+                `${t('page')} ${pageNum} ${t('of')} ${currentPdfDoc.numPages}`;
         }
 
         function updatePdfControls() {
@@ -1281,7 +1491,7 @@
                 <div class="typing-indicator">
                     <span></span><span></span><span></span>
                 </div>
-                <span style="margin-left: 10px; color: #ac0040; font-size: 14px;">Creating plot...</span>
+                <span style="margin-left: 10px; color: #ac0040; font-size: 14px;">${t('creatingPlot')}</span>
             `;
             contentDiv.appendChild(loadingDiv);
 
@@ -1497,18 +1707,11 @@
         authSwitchLink.addEventListener('click', (e) => {
             e.preventDefault();
             state.isAuthMode = state.isAuthMode === 'login' ? 'register' : 'login';
+            updateUI();
 
             if (state.isAuthMode === 'login') {
-                authTitle.textContent = 'Login';
-                authSubmitBtn.textContent = 'Login';
-                authSwitchText.textContent = "Don't have an account?";
-                authSwitchLink.textContent = 'Register';
                 emailGroup.classList.add('hidden');
             } else {
-                authTitle.textContent = 'Register';
-                authSubmitBtn.textContent = 'Register';
-                authSwitchText.textContent = 'Already have an account?';
-                authSwitchLink.textContent = 'Login';
                 emailGroup.classList.remove('hidden');
             }
         });
@@ -1579,7 +1782,7 @@
         function showChatScreen() {
             authScreen.classList.add('hidden');
             chatScreen.classList.remove('hidden');
-            userInfo.textContent = `Logged in as ${state.user.username}`;
+            updateUI();
         }
 
         // Chat functions
@@ -1664,7 +1867,7 @@
                 state.currentConversationId = conversation.id;
 
                 messagesContainer.innerHTML = '';
-                addMessage('assistant', 'Hello! I\'m your AI assistant. How can I help you today?');
+                addMessage('assistant', t('welcomeMessage'));
 
                 loadConversations();
                 connectWebSocket(conversation.id);
@@ -1757,16 +1960,16 @@
                     loadingDiv.className = 'tool-loading';
                     loadingDiv.id = 'tool-loading-indicator';
 
-                    let toolLabel = 'Executing tool';
+                    let toolLabel = t('executingTool');
                     if (data.tool_name === 'create_plot') {
-                        toolLabel = 'Creating plot';
+                        toolLabel = t('creatingPlot');
                     }
 
                     loadingDiv.innerHTML = `
                         <div class="typing-indicator">
                             <span></span><span></span><span></span>
                         </div>
-                        <span style="margin-left: 10px; color: #ac0040; font-size: 14px;">${toolLabel}...</span>
+                        <span style="margin-left: 10px; color: #ac0040; font-size: 14px;">${toolLabel}</span>
                     `;
                     currentMessageDiv.appendChild(loadingDiv);
                     console.log('DEBUG WS: Loading indicator appended, currentMessageDiv children:', currentMessageDiv.children.length);
@@ -1897,7 +2100,10 @@
             addMessage('user', message);
             addTypingIndicator();
 
-            state.ws.send(JSON.stringify({ message }));
+            state.ws.send(JSON.stringify({
+                message,
+                language: state.language
+            }));
             messageInput.value = '';
         });
 
