@@ -436,6 +436,12 @@
             background: #ac0040;
         }
 
+        .message.user .message-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
         .message.assistant .message-avatar {
             background: #f0f0f0;
         }
@@ -1631,7 +1637,10 @@
             const avatar = document.createElement('div');
             avatar.className = 'message-avatar';
             if (role === 'user') {
-                avatar.textContent = 'U';
+                const userImg = document.createElement('img');
+                userImg.src = '/static/avatar.png';
+                userImg.alt = 'User';
+                avatar.appendChild(userImg);
             } else {
                 const robotImg = document.createElement('img');
                 robotImg.src = '/static/robot.png';
