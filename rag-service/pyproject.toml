@@ -1,0 +1,21 @@
+[project]
+name = "rag-service"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.3.0",
+    "requests>=2.32.5",
+    "python-dotenv>=1.1.1",
+]
+
+[project.optional-dependencies]
+rag = [
+    "fastapi>=0.119.0",
+    "pymupdf>=1.26.5",
+    "python-docx>=1.2.0",
+    "qdrant-client>=1.15.1",
+    "sentence-transformers>=5.1.1",
+    "uvicorn>=0.37.0",
+]
