@@ -162,8 +162,8 @@ Examples:
         # Generate HTML with Chart.js
         # Note: Chart.js is already loaded in the main page
         html = f"""
-        <div style="background: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <canvas id="{chart_id}" style="max-height: 400px;"></canvas>
+        <div style="background: white; padding: 20px; border-radius: 8px; margin: 10px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); width: 100%;">
+            <canvas id="{chart_id}" style="width: 100%; height: 400px;"></canvas>
         </div>
         <script>
         (function() {{
