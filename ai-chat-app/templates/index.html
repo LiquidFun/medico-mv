@@ -541,6 +541,93 @@
             return date.toLocaleDateString();
         }
 
+        function renderToolCall(contentDiv, toolName, toolArgs) {
+            console.log('DEBUG: renderToolCall called with:', { toolName, toolArgs: toolArgs.substring(0, 100) });
+
+            // Re-execute the tool to get the HTML
+            if (toolName === 'create_plot') {
+                // Parse the arguments and regenerate the plot
+                try {
+                    const args = JSON.parse(toolArgs);
+                    console.log('DEBUG: Parsed tool args:', args);
+
+                    // Make a request to regenerate the plot HTML
+                    fetch('/api/tools/execute', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${state.token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            tool_name: toolName,
+                            arguments: args
+                        })
+                    })
+                    .then(r => {
+                        console.log('DEBUG: Tool execute response status:', r.status);
+                        if (!r.ok) {
+                            throw new Error(`HTTP ${r.status}: ${r.statusText}`);
+                        }
+                        return r.json();
+                    })
+                    .then(result => {
+                        console.log('DEBUG: Tool execute result:', result);
+
+                        if (!result.html) {
+                            console.error('No HTML in result:', result);
+                            return;
+                        }
+
+                        // Create a tool result div
+                        const plotDiv = document.createElement('div');
+                        plotDiv.setAttribute('data-tool-result', 'true');
+
+                        // Parse HTML and extract scripts
+                        const tempContainer = document.createElement('div');
+                        tempContainer.innerHTML = result.html;
+
+                        const scripts = tempContainer.querySelectorAll('script');
+                        const scriptContents = [];
+                        scripts.forEach(script => {
+                            if (script.src) {
+                                const newScript = document.createElement('script');
+                                newScript.src = script.src;
+                                scriptContents.push(newScript);
+                            } else {
+                                scriptContents.push(script.textContent);
+                            }
+                            script.remove();
+                        });
+
+                        plotDiv.innerHTML = tempContainer.innerHTML;
+                        contentDiv.appendChild(plotDiv);
+
+                        // Execute scripts
+                        scriptContents.forEach(scriptContent => {
+                            if (typeof scriptContent === 'string') {
+                                try {
+                                    eval(scriptContent);
+                                } catch (e) {
+                                    console.error('Error executing script:', e);
+                                }
+                            } else {
+                                plotDiv.appendChild(scriptContent);
+                            }
+                        });
+
+                        console.log('DEBUG: Plot rendered successfully');
+                    })
+                    .catch(e => {
+                        console.error('Error rendering tool call:', e);
+                        contentDiv.innerHTML += `<p style="color: red;">Error loading plot: ${e.message}</p>`;
+                    });
+                } catch (e) {
+                    console.error('Error parsing tool args:', e);
+                    contentDiv.innerHTML += `<p style="color: red;">Error parsing tool data: ${e.message}</p>`;
+                }
+            }
+        }
+
         function addMessage(role, content, isStreaming = false) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
@@ -559,7 +646,60 @@
                 if (role === 'user') {
                     contentDiv.textContent = content;
                 } else {
-                    contentDiv.innerHTML = marked.parse(content);
+                    // Check if content contains tool calls
+                    console.log('DEBUG: Checking content for tool calls:', content.substring(0, 200));
+                    const toolCallRegex = /\[Tool: ([^\]]+)\]\n({[\s\S]+?)(?=\n\n|\n\[Tool:|$)/g;
+                    let lastIndex = 0;
+                    let hasToolCalls = false;
+
+                    // First, render any markdown content before tool calls
+                    let match;
+                    const parts = [];
+
+                    while ((match = toolCallRegex.exec(content)) !== null) {
+                        hasToolCalls = true;
+                        console.log('DEBUG: Found tool call match:', match);
+                        // Add text before this tool call
+                        if (match.index > lastIndex) {
+                            const textBefore = content.substring(lastIndex, match.index);
+                            if (textBefore.trim()) {
+                                parts.push({ type: 'text', content: textBefore });
+                            }
+                        }
+                        // Add tool call
+                        parts.push({
+                            type: 'tool',
+                            name: match[1],
+                            args: match[2]
+                        });
+                        lastIndex = match.index + match[0].length;
+                    }
+
+                    console.log('DEBUG: hasToolCalls:', hasToolCalls, 'parts:', parts.length);
+
+                    // Add remaining text after last tool call
+                    if (lastIndex < content.length) {
+                        const textAfter = content.substring(lastIndex);
+                        if (textAfter.trim()) {
+                            parts.push({ type: 'text', content: textAfter });
+                        }
+                    }
+
+                    if (hasToolCalls) {
+                        // Render parts in order
+                        parts.forEach(part => {
+                            if (part.type === 'text') {
+                                const textDiv = document.createElement('div');
+                                textDiv.innerHTML = marked.parse(part.content);
+                                contentDiv.appendChild(textDiv);
+                            } else if (part.type === 'tool') {
+                                renderToolCall(contentDiv, part.name, part.args);
+                            }
+                        });
+                    } else {
+                        // No tool calls, just render markdown
+                        contentDiv.innerHTML = marked.parse(content);
+                    }
                 }
             }
 

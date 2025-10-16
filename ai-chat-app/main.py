@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from sqlalchemy import select
 
 from app.models import init_db, User, get_db
-from app.routes import auth_router, chat_router, ws_router
+from app.routes import auth_router, chat_router, ws_router, tools_router
 from app.services.auth import get_password_hash
 
 # Load environment variables
@@ -55,6 +55,7 @@ app = FastAPI(
 app.include_router(auth_router)
 app.include_router(chat_router)
 app.include_router(ws_router)
+app.include_router(tools_router)
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
