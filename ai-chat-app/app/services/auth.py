@@ -61,6 +61,29 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
 
+    # Handle anonymous sessions when DISABLE_LOGIN is enabled
+    if username.startswith("anonymous_") and os.getenv("DISABLE_LOGIN", "false").lower() == "true":
+        session_id = username.replace("anonymous_", "")
+
+        # Check if session user exists, create if not
+        result = await db.execute(select(User).where(User.username == username))
+        user = result.scalar_one_or_none()
+
+        if user is None:
+            # Create anonymous session user
+            user = User(
+                username=username,
+                email=f"{session_id}@anonymous.local",
+                hashed_password=get_password_hash(session_id),  # Not used, but required
+                display_name="Ulrike Schlüter"
+            )
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+
+        return user
+
+    # Regular authenticated user flow
     result = await db.execute(select(User).where(User.username == username))
     user = result.scalar_one_or_none()
 

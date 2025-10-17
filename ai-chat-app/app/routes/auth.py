@@ -3,6 +3,9 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel, EmailStr
+from datetime import timedelta
+import os
+import uuid
 
 from app.models import User, get_db
 from app.services import create_access_token, verify_password, get_password_hash, get_current_user
@@ -103,3 +106,47 @@ async def login(
 async def get_me(user: User = Depends(get_current_user)):
     """Get current user information."""
     return UserResponse.model_validate(user)
+
+
+@router.get("/config")
+async def get_auth_config():
+    """Get authentication configuration."""
+    return {
+        "disable_login": os.getenv("DISABLE_LOGIN", "false").lower() == "true"
+    }
+
+
+@router.post("/anonymous-token", response_model=Token, status_code=status.HTTP_201_CREATED)
+async def create_anonymous_token(session_id: str | None = None):
+    """
+    Create an anonymous session token when DISABLE_LOGIN is enabled.
+    If session_id is provided, it will be used; otherwise a new UUID is generated.
+    """
+    if os.getenv("DISABLE_LOGIN", "false").lower() != "true":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Anonymous mode is disabled",
+        )
+
+    # Use provided session_id or generate new one
+    if not session_id:
+        session_id = str(uuid.uuid4())
+
+    # Create JWT token with anonymous username
+    username = f"anonymous_{session_id}"
+    access_token = create_access_token(
+        data={"sub": username},
+        expires_delta=timedelta(days=365 * 10)  # 10 years for anonymous sessions
+    )
+
+    # Return token with virtual user info
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": UserResponse(
+            id=0,  # Will be assigned from DB on first use
+            username=username,
+            email=f"{session_id}@anonymous.local",
+            display_name="Ulrike Schlüter"
+        )
+    }

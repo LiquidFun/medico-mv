@@ -2209,17 +2209,78 @@
             messageInput.value = '';
         });
 
-        // Initialize
-        if (state.token && state.user) {
-            showChatScreen();
-            loadConversations();
-            // Auto-create or load first conversation
-            setTimeout(() => {
-                if (!state.currentConversationId) {
-                    newChatBtn.click();
+        // Anonymous mode initialization
+        async function initializeAnonymousMode() {
+            try {
+                // Check if anonymous mode is enabled
+                const configResponse = await fetch('/api/auth/config');
+                const config = await configResponse.json();
+
+                if (config.disable_login) {
+                    console.log('Anonymous mode enabled');
+
+                    // Get or create session ID
+                    let sessionId = localStorage.getItem('anonymous_session_id');
+                    if (!sessionId) {
+                        // Generate new UUID for this browser
+                        sessionId = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                            const r = Math.random() * 16 | 0;
+                            const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                            return v.toString(16);
+                        });
+                        localStorage.setItem('anonymous_session_id', sessionId);
+                        console.log('Generated new session ID:', sessionId);
+                    }
+
+                    // Get anonymous token
+                    const tokenResponse = await fetch('/api/auth/anonymous-token', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({session_id: sessionId})
+                    });
+
+                    if (!tokenResponse.ok) {
+                        throw new Error('Failed to get anonymous token');
+                    }
+
+                    const tokenData = await tokenResponse.json();
+
+                    // Set state as if user logged in
+                    state.token = tokenData.access_token;
+                    state.user = tokenData.user;
+                    localStorage.setItem('token', state.token);
+                    localStorage.setItem('user', JSON.stringify(state.user));
+
+                    console.log('Anonymous session initialized');
+                    return true;
                 }
-            }, 500);
+                return false;
+            } catch (error) {
+                console.error('Failed to initialize anonymous mode:', error);
+                return false;
+            }
         }
+
+        // Initialize
+        (async function() {
+            // Try anonymous mode first
+            const isAnonymous = await initializeAnonymousMode();
+
+            // Check if we have token and user (either from login or anonymous mode)
+            if (state.token && state.user) {
+                showChatScreen();
+                loadConversations();
+                // Auto-create or load first conversation
+                setTimeout(() => {
+                    if (!state.currentConversationId) {
+                        newChatBtn.click();
+                    }
+                }, 500);
+            } else if (!isAnonymous) {
+                // Show auth screen only if not in anonymous mode
+                console.log('Showing authentication screen');
+            }
+        })();
     </script>
 </body>
 </html>
